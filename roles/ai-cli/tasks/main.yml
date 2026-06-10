@@ -1,0 +1,6 @@
+- name: Link ai CLI
+  file:
+    src: /home/{{ ansible_user_id }}/infra-lab2/tools/ai-cli-v2/ai
+    dest: /home/{{ ansible_user_id }}/.local/bin/ai
+    state: link
+    force: true

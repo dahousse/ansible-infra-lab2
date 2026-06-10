@@ -1,0 +1,7 @@
+- name: Clone dotfiles repo
+  git:
+    repo: "https://github.com/<ton-user>/dotfiles-fedora.git"
+    dest: "/home/{{ ansible_user_id }}/dotfiles-fedora"
+
+- name: Run install script
+  shell: bash /home/{{ ansible_user_id }}/dotfiles-fedora/install.sh

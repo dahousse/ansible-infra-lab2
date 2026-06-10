@@ -1,0 +1,9 @@
+- name: Restore Fedora Dev Environment
+  hosts: local
+  become: true
+
+  roles:
+    - base
+    - zsh
+    - ai-cli
+    - dotfiles

@@ -1,0 +1,8 @@
+- name: Install base packages
+  dnf:
+    name:
+      - git
+      - curl
+      - zsh
+      - fastfetch
+    state: present
