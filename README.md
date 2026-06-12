@@ -109,6 +109,50 @@ Sauvegarde du code : un script cron pousse le dépôt chaque soir à 22h.
 Sauvegarde des VMs : playbook playbook_backup.yml.
 
 Supervision : Uptime Kuma surveille tous les services en continu.
+-----------------------------------------------------------------------------
+## 🚦 Playbook Traefik Intelligent
+
+Le playbook `playbook_traefik_config.yml` permet de **générer automatiquement** la configuration Traefik pour toutes les machines de l'inventaire, sans avoir à créer manuellement les fichiers `conf.d/`.
+
+### ✨ Fonctionnement
+
+Il suffit d'ajouter **deux variables** à n'importe quelle machine dans l'inventaire :
+
+```ini
+[mon_groupe]
+ma_machine ansible_host=192.168.1.X traefik_domain="monapp.mysmihome.duckdns.org" traefik_port="8080"
+traefik_domain : le nom de domaine complet pour accéder au service.
+
+traefik_port : le port sur lequel le service écoute.
+
+Le playbook se charge ensuite de :
+
+Générer un fichier conf.d/ma_machine.yml avec la règle de routage et le certificat SSL.
+
+Redémarrer Traefik pour appliquer la nouvelle configuration.
+
+🚀 Utilisation
+Pour une machine spécifique (exemple : cockpit) :
+
+bash
+ansible-playbook -i inventory playbook_traefik_config.yml --limit cockpit
+Pour toutes les machines éligibles :
+
+bash
+ansible-playbook -i inventory playbook_traefik_config.yml
+Pour simuler sans rien modifier :
+
+bash
+ansible-playbook -i inventory playbook_traefik_config.yml --check
+📝 Exemple
+Ajouter un service monitoring sur la machine 192.168.1.40 :
+
+ini
+[supervision]
+monitoring ansible_host=192.168.1.40 traefik_domain="monitoring.mysmihome.duckdns.org" traefik_port="3001"
+Après avoir lancé le playbook, le service sera accessible sur https://monitoring.mysmihome.duckdns.org.
+-----------------------------------------------------------------------------
+
 
 👤 Auteur
 Hasmi - Passionné d'infrastructure et d'automatisation.
