@@ -152,7 +152,31 @@ ini
 monitoring ansible_host=192.168.1.40 traefik_domain="monitoring.mysmihome.duckdns.org" traefik_port="3001"
 Après avoir lancé le playbook, le service sera accessible sur https://monitoring.mysmihome.duckdns.org.
 -----------------------------------------------------------------------------
+## 🤖 Combo Terraform + Ansible
 
+Une fois une VM créée par Terraform (voir `infra-lab-tf`), Ansible prend le relais pour la configurer entièrement.
+
+### 1. Prérequis
+- La VM doit être accessible en SSH sans mot de passe (clé SSH injectée par cloud-init).
+- L'inventaire Ansible (`inventory`) doit contenir la machine (mis à jour automatiquement par Terraform).
+
+### 2. Configuration automatique
+```bash
+ansible-playbook -i inventory playbook_first_install.yml --limit <hostname>
+3. Résultat
+Compte infra créé avec sudo sans mot de passe.
+
+Clés SSH déployées pour root et infra.
+
+Outils CLI installés : Zsh, Oh My Zsh, fastfetch, htop, glances.
+
+Machine prête à l'emploi en moins de 5 minutes.
+
+text
+
+---
+
+### 🚀 Appliquer la modification
 
 👤 Auteur
 Hasmi - Passionné d'infrastructure et d'automatisation.
