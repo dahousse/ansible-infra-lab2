@@ -57,3 +57,7 @@ infra
 cloud
 docker
 test-clean
+[test-clean]
+test-clone ansible_host=192.168.1.147
+[test-clean]
+test-clone ansible_host=192.168.1.138
