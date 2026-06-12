@@ -14,13 +14,13 @@ grafana ansible_host=192.168.1.37
 pve ansible_host=192.168.1.1
 
 [infra]
-cockpit ansible_host=192.168.1.3
+cockpit ansible_host=192.168.1.3 traefik_domain="cockpit.mysmihome.duckdns.org" traefik_port="9090"
 
 [cloud]
 casaos ansible_host=192.168.1.5
 
 [docker]
-portainer ansible_host=192.168.1.6
+portainer ansible_host=192.168.1.6 traefik_domain="portainer.mysmihome.duckdns.org" traefik_port="9443"
 
 [ai]
 ollama ansible_host=192.168.1.10
@@ -56,4 +56,4 @@ proxmox_host
 infra
 cloud
 docker
-test-clean 
+test-clean

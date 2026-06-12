@@ -1,0 +1,14 @@
+http:
+  routers:
+    {{ item }}:
+      rule: "Host(`{{ hostvars[item].traefik_domain }}`)"
+      entryPoints:
+        - websecure
+      service: {{ item }}
+      tls:
+        certResolver: letsencrypt
+  services:
+    {{ item }}:
+      loadBalancer:
+        servers:
+          - url: "http://{{ hostvars[item].ansible_host }}:{{ hostvars[item].traefik_port }}"
