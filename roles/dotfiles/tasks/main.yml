@@ -4,7 +4,6 @@
     name: git
     state: present
   become: yes
-  when: ansible_os_family == "Debian"
   ignore_errors: yes
 
 - name: Clone or update dotfiles-fedora repo
@@ -24,3 +23,38 @@
 - name: Show install result
   debug:
     var: install_result.stdout_lines
+
+- name: Ensure systemd user config dir exists
+  file:
+    path: "{{ ansible_user_dir }}/.config/systemd/user"
+    state: directory
+    mode: "0755"
+
+- name: Copy systemd path unit for real-time watcher
+  copy:
+    src: "{{ ansible_user_dir }}/dotfiles-fedora/systemd/dotfiles-sync.path"
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/dotfiles-sync.path"
+    mode: "0644"
+    remote_src: yes
+
+- name: Copy systemd service unit for real-time watcher
+  copy:
+    src: "{{ ansible_user_dir }}/dotfiles-fedora/systemd/dotfiles-sync.service"
+    dest: "{{ ansible_user_dir }}/.config/systemd/user/dotfiles-sync.service"
+    mode: "0644"
+    remote_src: yes
+
+- name: Enable and start the path unit watcher
+  systemd:
+    name: dotfiles-sync.path
+    scope: user
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid | default(1000) }}"
+
+- name: Enable linger for user (keep user services running)
+  command: loginctl enable-linger "{{ ansible_user_id }}"
+  become: yes
+  ignore_errors: yes
