@@ -3,17 +3,17 @@ name: 🏠 Ansible Dry-Run (self-hosted)
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
     paths:
-      - '*.yml'
-      - 'roles/**/*.yml'
-      - 'playbooks/**/*.yml'
-      - 'inventory'
+      - "*.yml"
+      - "roles/**/*.yml"
+      - "playbooks/**/*.yml"
+      - "inventory"
 
 jobs:
   dry-run:
     name: Check against real hosts
-    runs-on: [self-hosted, infra, local, ansible]
+    runs-on: [self-hosted]
 
     steps:
       - name: Checkout
@@ -22,7 +22,7 @@ jobs:
       - name: Syntax check all playbooks
         run: |
           for pb in playbook_*.yml site.yml; do
-            echo "→ $pb"
+            echo "$pb"
             ansible-playbook "$pb" --syntax-check -i inventory
           done
 
