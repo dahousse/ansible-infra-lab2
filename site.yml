@@ -1,10 +1,20 @@
 ---
 # site.yml
 # Playbook principal d'orchestration de la forteresse.
-# Pour lancer la configuration complète : ansible-playbook -i hosts site.yml
+# Pour lancer la configuration complète : ansible-playbook -i inventory site.yml
+
+- name: Check connectivity and gather facts
+  hosts: tous_mes_serveurs
+  gather_facts: yes
+  tasks:
+    - name: Ping test
+      ping:
 
 - name: Déploiement de la configuration de base
   import_playbook: playbook_base.yml
+
+- name: Déploiement de la configuration Traefik
+  import_playbook: playbook_traefik_config.yml
 
 - name: Déploiement des agents de supervision
   import_playbook: playbook_node_exporter.yml
@@ -15,5 +25,5 @@
 - name: Déploiement du serveur de visualisation
   import_playbook: playbook_grafana.yml
 
-- name: First Install
+- name: First Install (users, SSH, Zsh, paquets)
   import_playbook: playbook_first_install.yml

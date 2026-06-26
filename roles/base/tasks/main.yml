@@ -1,8 +1,22 @@
+---
 - name: Install base packages
-  dnf:
+  apt:
     name:
       - git
       - curl
       - zsh
-      - fastfetch
+      - htop
     state: present
+    update_cache: yes
+
+- name: Configure log rotation
+  copy:
+    dest: /etc/logrotate.d/ansible-managed
+    content: |
+      /var/log/*.log {
+          weekly
+          rotate 4
+          compress
+          missingok
+          notifempty
+      }

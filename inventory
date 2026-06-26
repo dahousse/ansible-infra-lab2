@@ -3,21 +3,22 @@ localhost ansible_connection=local
 
 [homelab]
 traefik ansible_host=192.168.1.200
-adguard ansible_host=192.168.1.202
+adguard ansible_host=192.168.1.202 traefik_domain="adguard.mysmihome.duckdns.org" traefik_port="80"
 
 [supervision]
-monitor ansible_host=192.168.1.35
+uptimekuma ansible_host=192.168.1.120 traefik_domain="uptime.mysmihome.duckdns.org" traefik_port="3001"
+supervision ansible_host=192.168.1.35
 prometheus ansible_host=192.168.1.36
 grafana ansible_host=192.168.1.37
 
 [proxmox_host]
-pve ansible_host=192.168.1.1
+pve ansible_host=192.168.1.1 traefik_domain="homelab.mysmihome.duckdns.org" traefik_port="8006"
 
 [infra]
 cockpit ansible_host=192.168.1.3 traefik_domain="cockpit.mysmihome.duckdns.org" traefik_port="9090"
 
 [cloud]
-casaos ansible_host=192.168.1.5
+casaos ansible_host=192.168.1.5 traefik_domain="cloud.mysmihome.duckdns.org" traefik_port="80"
 
 [docker]
 portainer ansible_host=192.168.1.6 traefik_domain="portainer.mysmihome.duckdns.org" traefik_port="9443"
@@ -25,7 +26,12 @@ portainer ansible_host=192.168.1.6 traefik_domain="portainer.mysmihome.duckdns.o
 [ai]
 ollama ansible_host=192.168.1.10
 
+[apps]
+dashy ansible_host=192.168.1.13 traefik_domain="dashy.mysmihome.duckdns.org" traefik_port="80"
+homeassistant ansible_host=192.168.1.2 traefik_domain="homeassistant.mysmihome.duckdns.org" traefik_port="8123"
+
 [test-clean]
+test-905 ansible_host=192.168.1.148 traefik_domain=test-905.mysmihome.duckdns.org traefik_port=80
 test ansible_host=192.168.1.99
 
 [proxmox_host:vars]
@@ -38,6 +44,9 @@ ansible_user=infra
 ansible_user=root
 
 [docker:vars]
+ansible_user=root
+
+[apps:vars]
 ansible_user=root
 
 [ai:vars]
@@ -56,8 +65,5 @@ proxmox_host
 infra
 cloud
 docker
+apps
 test-clean
-[test-clean]
-test-clone ansible_host=192.168.1.147
-[test-clean]
-test-clone ansible_host=192.168.1.138

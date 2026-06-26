@@ -12,7 +12,15 @@
         mode: '0644'
       notify: restart traefik
 
-    - name: Générer les fichiers de configuration dynamique pour chaque machine
+    - name: Récupérer les domaines déjà configurés dans conf.d
+      shell: |
+        grep -shE 'Host\(`[^`]+`\)' /etc/traefik/conf.d/*.yml 2>/dev/null \
+          | sed 's/.*Host(`//;s/`).*//' || true
+      register: existing_domains
+      changed_when: false
+      check_mode: no
+
+    - name: Générer les fichiers pour les nouveaux domaines uniquement
       template:
         src: traefik-service.j2
         dest: "/etc/traefik/conf.d/{{ item }}.yml"
@@ -23,10 +31,18 @@
       when:
         - hostvars[item].traefik_domain is defined
         - hostvars[item].traefik_port is defined
+        - hostvars[item].traefik_domain not in existing_domains.stdout_lines
       notify: restart traefik
+      register: generated
 
-  handlers:
-    - name: restart traefik
-      systemd:
-        name: traefik
-        state: restarted
+    - name: Afficher le résumé des modifications
+      debug:
+        msg: >-
+          {% if generated.results | selectattr('changed', 'equalto', true) | list | length > 0 %}
+          ✅ Nouvelles configs générées pour :
+          {% for r in generated.results if r.changed %}
+            - {{ r.item }} → {{ hostvars[r.item].traefik_domain }}
+          {% endfor %}
+          {% else %}
+          ✅ Aucun nouveau domaine — toutes les configs sont déjà à jour.
+          {% endif %}
