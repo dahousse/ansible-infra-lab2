@@ -1,35 +1,26 @@
 ---
-- name: Ensure .local/bin exists
-  file:
-    path: "{{ ansible_user_dir }}/.local/bin"
-    state: directory
-    mode: "0755"
-
-- name: Deploy .zshrc
-  copy:
-    src: .zshrc
-    dest: "{{ ansible_user_dir }}/.zshrc"
-    mode: "0644"
-    backup: yes
-
-- name: Deploy .p10k.zsh
-  copy:
-    src: .p10k.zsh
-    dest: "{{ ansible_user_dir }}/.p10k.zsh"
-    mode: "0644"
-    backup: yes
-
-- name: Deploy .gitconfig
-  copy:
-    src: .gitconfig
-    dest: "{{ ansible_user_dir }}/.gitconfig"
-    mode: "0644"
-    backup: yes
-
-- name: Ensure PATH includes .local/bin in .zshrc
-  lineinfile:
-    path: "{{ ansible_user_dir }}/.zshrc"
-    line: "export PATH=\"$HOME/.local/bin:$PATH\""
-    regexp: ".*\\.local/bin.*"
-    insertbefore: BOF
+- name: Ensure git is installed
+  package:
+    name: git
     state: present
+  become: yes
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+
+- name: Clone or update dotfiles-fedora repo
+  git:
+    repo: https://github.com/dahousse/dotfiles-fedora.git
+    dest: "{{ ansible_user_dir }}/dotfiles-fedora"
+    version: main
+    force: yes
+    update: yes
+
+- name: Run install.sh to create symlinks
+  command: bash "{{ ansible_user_dir }}/dotfiles-fedora/install.sh"
+  args:
+    chdir: "{{ ansible_user_dir }}/dotfiles-fedora"
+  register: install_result
+
+- name: Show install result
+  debug:
+    var: install_result.stdout_lines
