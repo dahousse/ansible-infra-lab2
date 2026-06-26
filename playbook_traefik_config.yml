@@ -10,7 +10,7 @@
         owner: root
         group: root
         mode: '0644'
-      notify: restart traefik
+      notify: reload traefik
 
     - name: Récupérer les domaines déjà configurés dans conf.d
       shell: |
@@ -32,7 +32,7 @@
         - hostvars[item].traefik_domain is defined
         - hostvars[item].traefik_port is defined
         - hostvars[item].traefik_domain not in existing_domains.stdout_lines
-      notify: restart traefik
+      notify: reload traefik
       register: generated
 
     - name: Afficher le résumé des modifications
@@ -46,3 +46,8 @@
           {% else %}
           ✅ Aucun nouveau domaine — toutes les configs sont déjà à jour.
           {% endif %}
+
+  handlers:
+    - name: reload traefik
+      command: systemctl kill -s USR1 traefik
+      listen: "reload traefik"
