@@ -7,7 +7,7 @@ adguard ansible_host=192.168.1.202 traefik_domain="adguard.mysmihome.duckdns.org
 
 [supervision]
 uptimekuma ansible_host=192.168.1.120 traefik_domain="uptime.mysmihome.duckdns.org" traefik_port="3001"
-supervision ansible_host=192.168.1.35
+supervision-box ansible_host=192.168.1.35
 prometheus ansible_host=192.168.1.36
 grafana ansible_host=192.168.1.37
 
