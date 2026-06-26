@@ -29,7 +29,7 @@ jobs:
           pip install ansible-lint
 
       - name: YAML Lint
-        run: yamllint -d '{extends: relaxed, rules: {line-length: disable}}' .
+        run: yamllint -c .yamllint .
 
       - name: Ansible Lint
         run: ansible-lint --exclude templates/ --exclude traefik/ || true
@@ -37,7 +37,7 @@ jobs:
       - name: Syntax Check all playbooks
         run: |
           for pb in playbook_*.yml site.yml; do
-            echo "→ $pb"
+            echo "-> $pb"
             ansible-playbook "$pb" --syntax-check -i inventory || true
           done
 
