@@ -1,0 +1,7 @@
+---
+- name: 📋 Déploiement des dotfiles
+  hosts: laptops
+  gather_facts: yes
+
+  roles:
+    - role: dotfiles

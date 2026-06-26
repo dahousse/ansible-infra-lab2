@@ -1,0 +1,12 @@
+---
+- name: 🖥️ Configuration Fedora Laptop
+  hosts: laptops
+  gather_facts: yes
+
+  tasks:
+    - name: Afficher un message de début
+      debug:
+        msg: "Déploiement des dotfiles sur {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+
+- name: Déploiement des dotfiles
+  import_playbook: playbook_dotfiles.yml

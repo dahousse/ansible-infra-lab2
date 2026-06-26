@@ -67,3 +67,6 @@ cloud
 docker
 apps
 test-clean
+
+[laptops]
+fedora44 ansible_host=192.168.1.100 ansible_user=hasmi
