@@ -3,20 +3,15 @@ name: 🔧 Ansible CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - '*.yml'
       - 'roles/**/*.yml'
-      - 'playbooks/**/*.yml'
       - 'inventory'
+      - 'templates/**'
       - '.github/workflows/*'
   pull_request:
-    branches: [ main ]
-    paths:
-      - '*.yml'
-      - 'roles/**/*.yml'
-      - 'playbooks/**/*.yml'
-      - 'inventory'
+    branches: [ master ]
 
 jobs:
   lint:
