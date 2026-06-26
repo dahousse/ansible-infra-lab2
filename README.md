@@ -6,60 +6,54 @@
 
 ## 🖥️ Fedora Laptop — Restauration après panne
 
-> *Nouveau PC, disque cramé, install fraîche ? Tu déploies tout en **1 commande**.*
+> *Nouveau PC, disque cramé, install fraîche ? Tu remets tout en **1 commande**.*
 
 ### 📦 Prérequis
 
 ```bash
-# 1. Installer Ansible sur le nouveau PC
-sudo dnf install -y ansible
+sudo dnf install -y git ansible-core
+```
 
-# 2. Cloner ce repo
+### 🚀 Restauration complète (post-crash)
+
+```bash
+# 1. Cloner le repo
 git clone https://github.com/dahousse/ansible-infra-lab2.git
 cd ansible-infra-lab2
 
-# 3. Activer SSH (si pas déjà fait)
-sudo systemctl enable --now sshd
+# 2. Restauration complète (dotfiles + packages + navigateurs + configs)
+ansible-playbook -i inventory playbook_restore_laptop.yml -k -K
+
+# Mot de passe sudo demandé une seule fois, Ansible fait le reste.
 ```
-
-### 🚀 Restauration complète
-
-```bash
-ansible-playbook -i inventory playbook_laptop.yml --ask-pass -k
-```
-
-*Mot de passe sudo demandé une seule fois, Ansible fait le reste.*
 
 ### ✅ Ce qui est restauré
 
-| Fichier | Destination | Description |
+| Étape | Composant | Rôle |
 |:---|---:|---|
-| `.zshrc` | `~/.zshrc` | Zsh config avec Powerlevel10k |
-| `.p10k.zsh` | `~/.p10k.zsh` | Powerlevel10k theme |
-| `.gitconfig` | `~/.gitconfig` | Git (user, email, credential) |
-| `PATH` | `~/.zshrc` | `~/.local/bin` dans le PATH |
-| `~/.local/bin/` | Créé | Dossier pour binaires locaux |
+| 1 | Dotfiles (.zshrc, .p10k, .gitconfig) | `dotfiles` |
+| 2 | Watcher temps réel (systemd path unit) | `dotfiles` |
+| 3 | **Paquets dnf** (4000+) | `laptop-restore` |
+| 4 | **Flatpaks** (54) | `laptop-restore` |
+| 5 | **Paquets Python** (401) | `laptop-restore` |
+| 6 | **Firefox** — profils, marque-pages, mots de passe | `laptop-restore` |
+| 7 | **Chromium** — historique, cookies, extensions | `laptop-restore` |
+| 8 | **GNOME Shell** — dconf complet, extensions | `laptop-restore` |
+| 9 | **VS Code** — settings, 74 extensions | `laptop-restore` |
 
-### 🔄 Mettre à jour la sauvegarde
+> Les données viennent des backups automatiques du repo [dotfiles-fedora](https://github.com/dahousse/dotfiles-fedora) (watcher temps réel + backup quotidien).
 
-```bash
-cd ~/ansible-infra-lab2
-cp ~/.zshrc roles/dotfiles/files/.zshrc
-cp ~/.gitconfig roles/dotfiles/files/.gitconfig
-cp ~/.p10k.zsh roles/dotfiles/files/.p10k.zsh
-git add roles/dotfiles/files/
-git commit -m "dotfiles: mise à jour $(date +%Y-%m-%d)"
-git push
-```
-
-### 📋 Menu complet
+### 📋 Playbooks disponibles
 
 ```bash
 # Restaurer uniquement les dotfiles
 ansible-playbook -i inventory playbook_dotfiles.yml
 
-# Restaurer les dotfiles + config système laptop
+# Config laptop standard (dotfiles seulement)
 ansible-playbook -i inventory playbook_laptop.yml
+
+# Restauration complète après crash (dotfiles + packages + browsers + configs)
+ansible-playbook -i inventory playbook_restore_laptop.yml -k -K
 ```
 
 ---
@@ -90,7 +84,8 @@ ansible-playbook -i inventory playbook_first_install.yml --limit cockpit
 
 | Playbook | Description |
 |:---|---|
-| `playbook_laptop.yml` | 🖥️ Laptop Fedora 44 (dotfiles + config) |
+| `playbook_restore_laptop.yml` | 🖥️ **Restauration complète** post-crash (dotfiles + packages + navigateurs + configs) |
+| `playbook_laptop.yml` | 🖥️ Laptop Fedora 44 (dotfiles seulement) |
 | `playbook_dotfiles.yml` | 📋 Dotfiles uniquement |
 | `playbook_first_install.yml` | 🐚 Setup initial (user infra, Zsh, outils) |
 | `playbook_traefik_config.yml` | 🚦 Enregistre une VM dans Traefik |
@@ -113,6 +108,7 @@ ansible-playbook -i inventory playbook_first_install.yml --limit cockpit
 
 | Tag | Goal | Date |
 |:---|---:|:---|
+| **v0.8.0** | **U2 — Backup restore laptop post-crash** | **2026-06-26** |
 | v0.7.0 | U2 — Dotfiles Fedora 44 backup natif | 2026-06-26 |
 | v0.6.0 | E1 — Ansible V2 full deployment (12/13 hosts) | 2026-06-26 |
 | v0.5.0 | CI/CD pipelines finalisés | 2026-06-06 |
