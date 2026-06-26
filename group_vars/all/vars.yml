@@ -1,0 +1,13 @@
+---
+# Variables infra-lab - secrets sourced from vault.yml
+
+# Proxmox (used by terraform via lookup)
+proxmox_password: "{{ vault_proxmox_password }}"
+lxc_root_password: "{{ vault_lxc_root_password }}"
+
+# Nextcloud
+nextcloud_db_password: "{{ vault_nextcloud_db_password }}"
+nextcloud_admin_password: "{{ vault_nextcloud_admin_password }}"
+
+# Glances
+glances_password: "{{ vault_glances_password }}"
