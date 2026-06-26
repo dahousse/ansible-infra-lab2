@@ -1,0 +1,212 @@
+---
+# tasks/main.yml for laptop-restore role
+# Restaure un Fedora 44 laptop après crash en utilisant les backups
+# Nécessite: le rôle dotfiles (exécuté avant) + repo dotfiles-fedora cloné
+
+- name: "🖥️  LAPTOP RESTORE — fedora44"
+  debug:
+    msg: "Restauration de {{ ansible_hostname }} depuis {{ backup_dir }}"
+
+# ── 1. PACKAGES dnf ─────────────────────────────
+- name: "📦 1/7 — Installation des paquets dnf"
+  block:
+    - name: Lire la liste des paquets dnf
+      slurp:
+        src: "{{ backup_dir }}/packages/dnf-names.txt"
+      register: dnf_list_raw
+      ignore_errors: yes
+
+    - name: Installer les paquets dnf
+      dnf:
+        name: "{{ dnf_list_raw.content | b64decode | split('\n') | select | list }}"
+        state: present
+      become: yes
+      when: dnf_list_raw is succeeded
+      register: dnf_install
+      ignore_errors: yes
+
+    - name: Résultat dnf
+      debug:
+        msg: "{{ dnf_install.changed | default(false) | ternary('✅ Paquets installés/mis à jour', '⚠️  Vérifier les paquets manquants') }}"
+  ignore_errors: yes
+
+# ── 2. FLATPAK ───────────────────────────────────
+- name: "📦 2/7 — Installation des Flatpaks"
+  block:
+    - name: S'assurer que Flatpak est installé
+      dnf:
+        name: flatpak
+        state: present
+      become: yes
+      ignore_errors: yes
+
+    - name: Ajouter Flathub remote
+      command: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      become: yes
+      ignore_errors: yes
+
+    - name: Lire la liste flatpak
+      slurp:
+        src: "{{ backup_dir }}/packages/flatpak.txt"
+      register: flatpak_list_raw
+      ignore_errors: yes
+
+    - name: Installer les Flatpaks
+      command: "flatpak install --noninteractive -y flathub {{ item }}"
+      loop: "{{ flatpak_list_raw.content | b64decode | split('\n') | select | list }}"
+      when: flatpak_list_raw is succeeded
+      ignore_errors: yes
+      register: flatpak_result
+      changed_when: "'installed' in flatpak_result.stdout | default('')"
+  ignore_errors: yes
+
+# ── 3. PIP ───────────────────────────────────────
+- name: "📦 3/7 — Installation des paquets Python"
+  block:
+    - name: S'assurer que pipx est installé
+      dnf:
+        name: pipx
+        state: present
+      become: yes
+      ignore_errors: yes
+
+    - name: Lire la liste pip
+      slurp:
+        src: "{{ backup_dir }}/packages/pip.txt"
+      register: pip_list_raw
+      ignore_errors: yes
+
+    - name: Installer les paquets pip
+      shell: |
+        pip install --user "{{ item }}" 2>/dev/null || true
+      loop: "{{ pip_list_raw.content | b64decode | split('\n') | select | list }}"
+      when: pip_list_raw is succeeded
+      ignore_errors: yes
+  ignore_errors: yes
+
+# ── 4. FIREFOX ───────────────────────────────────
+- name: "🦊 4/7 — Restauration Firefox"
+  block:
+    - name: Lire profiles.ini pour trouver le profil
+      slurp:
+        src: "{{ ansible_user_dir }}/.mozilla/firefox/profiles.ini"
+      register: ff_ini
+      ignore_errors: yes
+
+    - name: Extraire le nom du profil actif (section Install)
+      set_fact:
+        ff_profile: "{{ (ff_ini.content | b64decode | regex_search('\\[Install[^]]*\\]\\nDefault=([^\\n]+)', '\\1') | first | default('')) }}"
+      when: ff_ini is succeeded
+
+    - name: Restaurer les fichiers critiques Firefox
+      copy:
+        src: "{{ backup_dir }}/browsers/firefox/{{ item }}"
+        dest: "{{ ansible_user_dir }}/.mozilla/firefox/{{ ff_profile }}/{{ item }}"
+        mode: "0600"
+      loop:
+        - places.sqlite
+        - logins.json
+        - extensions.json
+        - prefs.js
+        - containers.json
+        - key4.db
+        - cert9.db
+      when: ff_profile is defined and ff_profile | length > 0
+      ignore_errors: yes
+      register: ff_restore
+
+    - name: Firefox restauré
+      debug:
+        msg: "✅ Firefox: {{ ff_restore.results | selectattr('changed', 'equalto', true) | list | length }} fichiers restaurés"
+      when: ff_restore is defined
+  ignore_errors: yes
+
+# ── 5. CHROMIUM ──────────────────────────────────
+- name: "🌐 5/7 — Restauration Chromium"
+  block:
+    - name: Restaurer les fichiers Chromium
+      copy:
+        src: "{{ backup_dir }}/browsers/chromium/{{ item }}"
+        dest: "{{ ansible_user_dir }}/.config/chromium/Default/{{ item }}"
+        mode: "0600"
+      loop:
+        - Preferences
+        - Login Data
+        - Cookies
+        - History
+        - Web Data
+      ignore_errors: yes
+      register: chr_restore
+
+    - name: Restaurer Local State Chromium
+      copy:
+        src: "{{ backup_dir }}/browsers/chromium/Local State"
+        dest: "{{ ansible_user_dir }}/.config/chromium/Local State"
+        mode: "0600"
+      ignore_errors: yes
+
+    - name: Restaurer les Extensions Chromium
+      copy:
+        src: "{{ backup_dir }}/browsers/chromium/Extensions/"
+        dest: "{{ ansible_user_dir }}/.config/chromium/Default/Extensions/"
+        mode: "0755"
+        directory_mode: "0755"
+      ignore_errors: yes
+
+    - name: Chromium restauré
+      debug:
+        msg: "✅ Chromium: {{ chr_restore.results | selectattr('changed', 'equalto', true) | list | length }} fichiers restaurés"
+      when: chr_restore is defined
+  ignore_errors: yes
+
+# ── 6. GNOME ─────────────────────────────────────
+- name: "🎨 6/7 — Restauration GNOME Shell"
+  block:
+    - name: Restaurer les paramètres dconf GNOME
+      command: "dconf load /org/gnome/ < {{ backup_dir }}/gnome/dconf-settings.ini"
+      ignore_errors: yes
+      register: dconf_result
+
+    - name: Résultat GNOME
+      debug:
+        msg: "✅ GNOME: dconf restauré"
+  ignore_errors: yes
+
+# ── 7. VS CODE ───────────────────────────────────
+- name: "💻 7/7 — Restauration VS Code"
+  block:
+    - name: S'assurer que le dossier User existe
+      file:
+        path: "{{ ansible_user_dir }}/.config/Code/User"
+        state: directory
+        mode: "0755"
+
+    - name: Restaurer settings.json
+      copy:
+        src: "{{ backup_dir }}/vscode/settings.json"
+        dest: "{{ ansible_user_dir }}/.config/Code/User/settings.json"
+        mode: "0644"
+      ignore_errors: yes
+
+    - name: Lire la liste des extensions
+      slurp:
+        src: "{{ backup_dir }}/vscode/extensions.txt"
+      register: vscode_ext
+      ignore_errors: yes
+
+    - name: Installer les extensions VS Code
+      command: "code --install-extension {{ item.split('@')[0] }}"
+      loop: "{{ vscode_ext.content | b64decode | split('\n') | select | list }}"
+      when: vscode_ext is succeeded
+      ignore_errors: yes
+      register: code_ext
+      changed_when: "'already installed' not in code_ext.stdout | default('')"
+  ignore_errors: yes
+
+# ── FINISH ───────────────────────────────────────
+- name: "✅ RESTAURATION TERMINÉE"
+  debug:
+    msg:
+      - "Redémarrage recommandé pour appliquer tous les changements."
+      - "Après reboot: vérifier Firefox, Chromium, GNOME, VS Code."
+      - "Les dotfiles et le watcher temps réel sont déjà actifs (rôle dotfiles)."

@@ -1,0 +1,6 @@
+---
+# defaults/main.yml for laptop-restore role
+
+# Path to the dotfiles-fedora repo (backup source)
+dotfiles_repo: "{{ ansible_user_dir }}/dotfiles-fedora"
+backup_dir: "{{ dotfiles_repo }}/backup"

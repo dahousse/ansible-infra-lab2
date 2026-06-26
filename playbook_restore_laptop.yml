@@ -1,0 +1,21 @@
+---
+- name: "🖥️  LAPTOP RESTORE — Post-crash complet"
+  hosts: laptops
+  gather_facts: yes
+
+  tasks:
+    - name: Afficher un message de début
+      debug:
+        msg: "🚀 Restauration complète de {{ inventory_hostname }} après crash"
+
+- name: "📋 Étape 1 — Dotfiles + Watcher"
+  import_playbook: playbook_dotfiles.yml
+
+- name: "🔄 Étape 2 — Restaure packages, navigateurs, configs"
+  hosts: laptops
+  gather_facts: yes
+
+  roles:
+    - role: laptop-restore
+      vars:
+        backup_dir: "{{ ansible_user_dir }}/dotfiles-fedora/backup"
