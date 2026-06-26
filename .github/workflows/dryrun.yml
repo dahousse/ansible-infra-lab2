@@ -1,0 +1,39 @@
+---
+name: 🏠 Ansible Dry-Run (self-hosted)
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '*.yml'
+      - 'roles/**/*.yml'
+      - 'playbooks/**/*.yml'
+      - 'inventory'
+
+jobs:
+  dry-run:
+    name: Check against real hosts
+    runs-on: [self-hosted, infra, local, ansible]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax check all playbooks
+        run: |
+          for pb in playbook_*.yml site.yml; do
+            echo "→ $pb"
+            ansible-playbook "$pb" --syntax-check -i inventory
+          done
+
+      - name: Ping all hosts
+        run: ansible -i inventory all -m ping -o --ssh-common-args="-o StrictHostKeyChecking=no" || true
+
+      - name: Dry-run first_install
+        run: ansible-playbook -i inventory playbook_first_install.yml --check --diff --ssh-common-args="-o StrictHostKeyChecking=no" || true
+
+      - name: Dry-run base
+        run: ansible-playbook -i inventory playbook_base.yml --check --diff --ssh-common-args="-o StrictHostKeyChecking=no" || true
+
+      - name: Dry-run site.yml (traefik only)
+        run: ansible-playbook -i inventory site.yml --check --diff --tags traefik-config --ssh-common-args="-o StrictHostKeyChecking=no" || true

@@ -1,0 +1,50 @@
+---
+name: 🔧 Ansible CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '*.yml'
+      - 'roles/**/*.yml'
+      - 'playbooks/**/*.yml'
+      - 'inventory'
+      - '.github/workflows/*'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '*.yml'
+      - 'roles/**/*.yml'
+      - 'playbooks/**/*.yml'
+      - 'inventory'
+
+jobs:
+  lint:
+    name: Lint + Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible + Linters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible yamllint
+          pip install ansible-lint
+
+      - name: YAML Lint
+        run: yamllint -d '{extends: relaxed, rules: {line-length: disable}}' .
+
+      - name: Ansible Lint
+        run: ansible-lint --exclude templates/ --exclude traefik/ || true
+
+      - name: Syntax Check all playbooks
+        run: |
+          for pb in playbook_*.yml site.yml; do
+            echo "→ $pb"
+            ansible-playbook "$pb" --syntax-check -i inventory || true
+          done
+
+      - name: Inventory check
+        run: ansible-inventory -i inventory --list
